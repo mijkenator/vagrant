@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# vm configuration
+
+NODES = 1
+MEMORY = 4048
+CPUS = 4
+
+Vagrant.configure("2") do |config|
+	
+  (1..NODES).each do |i|
+    config.vm.define "ERLDEV" do |node|
+        # Specify the base box
+        node.vm.box = "ubuntu/xenial64"
+        node.vm.box_url = "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box"
+#        node.vm.box = "ubuntu/vivid64"
+#        node.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/vivid/current/vivid-server-cloudimg-amd64-vagrant-disk1.box"
+        node.vm.box_check_update = true
+        node.vm.network :private_network, ip: "192.168.99.43"
+        node.vm.hostname = "erldev"
+        
+        node.vm.provider :virtualbox do |v|
+          v.name = "erldev-#{i}"
+          v.memory = MEMORY
+          v.cpus = CPUS
+        end
+      
+        # setup ssh
+        node.ssh.insert_key = false
+        node.ssh.private_key_path = [ "~/.ssh/id_rsa", "~/.vagrant.d/insecure_private_key" ]
+        node.vm.provision :file, source: "~/.ssh/id_rsa_wp.pub", destination: "~/.ssh/authorized_keys"
+
+        node.vm.synced_folder "./", "/var/www", create: true, group: "www-data", owner: "www-data"
+        #node.vm.synced_folder "./", "/var/www", create: true, nfs: true
+
+        # fix sudo
+        #node.vm.provision "fix-no-tty", type: "shell" do |s|
+        #  s.privileged = false
+        #  s.inline = "sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
+        #end
+
+        # Shell provisioning
+        node.vm.provision "shell" do |s|
+    	    s.path = "provision/setup.sh"
+        end
+
+    end
+  end
+
+end
+

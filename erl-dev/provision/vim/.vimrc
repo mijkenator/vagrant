@@ -243,3 +243,4 @@ highlight clear SignColumn
 colorscheme desert
 au! BufNewFile,BufRead *.exs,*.ex,*.eex setf elixir
 
+set t_Co=256
